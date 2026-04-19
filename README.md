@@ -124,32 +124,6 @@ Hệ thống chạy 2 công việc song song:
 
 ---
 
-## 🧠 Phân Tích Chuyên Sâu Các Thuật Toán Trong Code (Dành Cho Học Tập)
-
-### Câu 1: Logic "Tự Động Chuyển Chế Độ Đếm" hoạt động như thế nào?
-*   **Cơ chế:** Trong `main.py`, hệ thống kiểm tra `has_zone`. 
-*   **Nếu `has_zone = True`:** Hệ thống dùng hàm `point_in_roi(pts)` (sử dụng `cv2.pointPolygonTest`) để kiểm tra tâm của xe có nằm trong đa giác không. Chỉ đếm nếu nằm trong.
-*   **Nếu `has_zone = False`:** Mọi xe xuất hiện trong khung hình đều được tính.
-
-### Câu 2: Thuật toán Spatial Re-ID giải quyết vấn đề gì?
-*   **Vấn đề:** Khi một chiếc xe bị xe tải lớn che khuất trong 5-10 frame, YOLO sẽ làm mất ID cũ và cấp ID mới khi xe xuất hiện lại. Điều này làm số đếm bị tăng sai.
-*   **Giải pháp (Dòng 121-139 main.py):** Khi có ID mới, hệ thống lục lại "Kho lưu trữ xe vừa mất" (`lost_catalog`). Nếu xe mới có tọa độ gần sát vị trí xe cũ vừa mất (dưới 100 pixel) và cùng loại xe, hệ thống sẽ coi đó là xe cũ và **không đếm thêm**.
-
-### Câu 3: Làm sao để đảm bảo dữ liệu không bị sai lệch khi nhiều luồng truy cập (Race Condition)?
-*   **Cơ chế Locking:** Vì biến `state` (số lượng xe) và `latest_frame` (hình ảnh) được cả luồng AI (Ghi) và luồng API (Đọc) sử dụng, chúng ta dùng `threading.Lock()`.
-*   **Ví dụ:** `with shared.state_lock:` đảm bảo tại một thời điểm chỉ có 1 luồng được phép thay đổi số lượng xe.
-
-### Câu 4: Sự khác biệt giữa `seen_ids` và `zone_seen_ids` là gì?
-*   `seen_ids`: Bộ nhớ lưu những xe đã đếm khi chạy chế độ Toàn Màn Hình.
-*   `zone_seen_ids`: Bộ nhớ lưu những xe đã đếm khi chạy chế độ Trong Vùng.
-*   **Mục đích:** Khi người dùng bật/tắt vùng ROI, hệ thống có thể chuyển đổi bộ nhớ đếm tương ứng để đảm bảo tính chính xác cho từng chế độ riêng biệt.
-
-### Câu 5: Tại sao hệ thống lại dùng MJPEG Stream thay vì gửi từng ảnh Base64?
-*   **MJPEG (Motion JPEG):** Hoạt động bằng cách giữ kết nối HTTP mở và gửi liên tiếp các file JPEG.
-*   **Ưu điểm:** Độ trễ thấp hơn, trình duyệt hỗ trợ mặc định qua thẻ `<img>`, tiết kiệm băng thông hơn so với việc mã hóa Base64 (vốn làm tăng kích thước file thêm 33%).
-
----
-
 ## 🚀 Hướng Dẫn Cài Đặt
 
 1.  **Cài đặt thư viện:**
