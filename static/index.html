@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CamAI — Phân tích giao thông</title>
+  <meta name="description" content="Hệ thống phân tích phương tiện giao thông thời gian thực bằng YOLOv8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- ── HEADER ─────────────────────────────────────────── -->
+  <header class="dash-header">
+    <div class="header-brand">
+      <div class="brand-icon">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M15 10l4.553-2.069A1 1 0 0121 8.87V15.13a1 1 0 01-1.447.9L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <div>
+        <h1>CamAI</h1>
+        <span class="header-sub">YOLOv8 · Real-time</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <span class="stat-pill green" id="roiStatusPill">● Zone Active</span>
+    </div>
+
+    <div class="header-right">
+      <div class="header-clock" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- ── MAIN CONTENT ───────────────────────────────────── -->
+  <div class="dash-content">
+
+    <!-- LEFT: Camera -->
+    <div class="col-camera">
+      <div class="camera-card">
+
+        <!-- Video Area -->
+        <div class="video-area">
+          <img id="videoStream" class="cam-feed" src="/api/stream" alt="Live Feed">
+          <canvas id="roiCanvas"  class="overlay-canvas"></canvas>
+          <canvas id="detCanvas"  class="overlay-canvas" style="pointer-events:none; z-index:11;"></canvas>
+
+          <!-- Top-left overlays -->
+          <div class="overlay-tl">
+            <div class="overlay-badge live-badge">
+              <span class="dot-live"></span> LIVE
+            </div>
+          </div>
+        </div>
+
+        <!-- Control Footer -->
+        <div class="cam-footer">
+          <div class="cam-footer-left">
+            <span class="dot-green-glow"></span>
+            <span class="cf-label">Online</span>
+            <div class="cf-divider"></div>
+            <span class="cf-model">YOLOv8n</span>
+            <div class="cf-divider"></div>
+            <span class="cf-latency" id="statRoiText">---</span>
+          </div>
+          <div class="cam-footer-right">
+            <button class="ctrl-btn zone-btn" id="btnZoneToggle">
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              <span id="btnZoneText">Vẽ Zone</span>
+            </button>
+            <button class="ctrl-btn reset-btn" id="btnResetZone">Xóa Zone</button>
+            <button class="ctrl-btn reset-btn" id="btnReset">Reset</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: Stats -->
+    <div class="col-right">
+
+      <!-- Vehicle Classification (zone-based) -->
+      <div class="right-card">
+        <div class="rc-header">
+          <div class="rc-title-row">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            Phân loại xe
+          </div>
+          <span class="rc-actions">
+            <span class="rc-link-btn" id="zoneLabel">Trong zone</span>
+          </span>
+        </div>
+        <div class="vehicle-grid">
+          <div class="v-chip" id="cardCar">
+            <span class="v-label">Ô tô</span>
+            <span class="v-count v-car" id="countCar">0</span>
+          </div>
+          <div class="v-chip" id="cardMoto">
+            <span class="v-label">Xe máy</span>
+            <span class="v-count v-moto" id="countMoto">0</span>
+          </div>
+          <div class="v-chip" id="cardTruck">
+            <span class="v-label">Xe tải</span>
+            <span class="v-count v-truck" id="countTruck">0</span>
+          </div>
+          <div class="v-chip" id="cardBus">
+            <span class="v-label">Xe buýt</span>
+            <span class="v-count v-bus" id="countBus">0</span>
+          </div>
+        </div>
+
+        <!-- Proportion bar -->
+        <div class="prop-bar">
+          <div class="prop-seg car"   id="segCar"   style="width:0%"></div>
+          <div class="prop-seg moto"  id="segMoto"  style="width:0%"></div>
+          <div class="prop-seg truck" id="segTruck" style="width:0%"></div>
+          <div class="prop-seg bus"   id="segBus"   style="width:0%"></div>
+        </div>
+        <div class="prop-legend">
+          <span class="leg car">Ô tô</span>
+          <span class="leg moto">Xe máy</span>
+          <span class="leg truck">Xe tải</span>
+          <span class="leg bus">Xe buýt</span>
+        </div>
+      </div>
+
+      <div class="right-card qs-card">
+        <div class="rc-header">
+          <div class="rc-title-row">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+            </svg>
+            Vùng ROI
+          </div>
+        </div>
+        <div class="qs-grid">
+          <div class="qs-item">
+            <span class="qs-label">Ô tô</span>
+            <span class="qs-val green" id="roiCar">0</span>
+          </div>
+          <div class="qs-item">
+            <span class="qs-label">Xe máy</span>
+            <span class="qs-val" id="roiMoto">0</span>
+          </div>
+          <div class="qs-item">
+            <span class="qs-label">Xe tải</span>
+            <span class="qs-val" id="roiTruck">0</span>
+          </div>
+          <div class="qs-item">
+            <span class="qs-label">Xe buýt</span>
+            <span class="qs-val" id="roiBus">0</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
