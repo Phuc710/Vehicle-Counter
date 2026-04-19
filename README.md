@@ -11,7 +11,11 @@ Dự án này là một hệ thống thị giác máy tính toàn diện, sử d
 | ![Detection Demo](img_demo/detec1.png) | ![ROI Counting Demo](img_demo/detec_inzone.png) |
 | *Hệ thống nhận diện nhiều loại xe* | *Chỉ đếm xe khi đi vào vùng đa giác* |
 
+> [!TIP]
+> **Video Demo:** Xem video demo chất lượng cao tại đây: [Link Video Demo (YouTube/Drive)](#) *(Vui lòng cập nhật link video của bạn)*
+
  ---
+
 
 
 ---
